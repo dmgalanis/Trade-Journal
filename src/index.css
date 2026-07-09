@@ -598,3 +598,187 @@ textarea {
   color: var(--ink);
 }
 .plan-section textarea { margin: 0; }
+/* ===== Backup panel: discreet gear + slide-in panel ===== */
+/* Append this block to the end of src/index.css */
+
+.backup-gear-btn {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-line);
+  background: var(--paper-raised);
+  color: var(--ink-faint);
+  font-size: 0.95rem;
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+.backup-gear-btn:hover {
+  opacity: 1;
+  color: var(--ink-soft);
+}
+
+.backup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 42, 36, 0.35);
+  z-index: 900;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.backup-panel {
+  width: 100%;
+  max-width: 360px;
+  height: 100%;
+  background: var(--paper);
+  border-left: 1px solid var(--rule-line);
+  padding: 1.25rem;
+  overflow-y: auto;
+  box-shadow: -4px 0 20px rgba(31, 42, 36, 0.15);
+}
+
+.backup-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.backup-panel-header h3 { margin: 0; }
+.backup-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  padding: 0 0.25rem;
+}
+.backup-close:hover { color: var(--ink); }
+
+.backup-now-btn {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+.backup-now-btn:disabled { opacity: 0.6; cursor: wait; }
+
+.backup-status-msg {
+  font-size: 0.82rem;
+  color: var(--accent-good);
+  background: var(--accent-good-soft);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.75rem;
+}
+.backup-error-msg {
+  font-size: 0.82rem;
+  color: var(--accent-bad);
+  background: var(--accent-bad-soft);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.75rem;
+}
+
+.backup-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 1rem 0 0.5rem;
+}
+.backup-refresh-btn {
+  background: none;
+  border: 1px solid var(--rule-line);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.backup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.backup-list-item {
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.75rem;
+  background: var(--paper-raised);
+}
+.backup-item-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+.backup-item-date { font-size: 0.85rem; color: var(--ink); }
+.backup-item-meta { font-size: 0.75rem; color: var(--ink-faint); font-family: 'IBM Plex Mono', monospace; }
+
+.backup-restore-btn {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+.backup-restore-btn:hover { border-color: var(--accent-bad); color: var(--accent-bad); }
+
+.backup-confirm-block { margin-top: 0.4rem; }
+.backup-confirm-hint {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.4rem;
+}
+.backup-confirm-block input {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--accent-bad);
+  border-radius: var(--radius);
+  background: var(--paper);
+  margin-bottom: 0.5rem;
+}
+.backup-confirm-actions { display: flex; gap: 0.5rem; }
+.backup-confirm-yes {
+  flex: 1;
+  padding: 0.45rem;
+  border: 1px solid var(--accent-bad);
+  border-radius: var(--radius);
+  background: var(--accent-bad);
+  color: var(--paper);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.backup-confirm-yes:disabled { opacity: 0.5; cursor: not-allowed; }
+.backup-confirm-cancel {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 480px) {
+  .backup-panel { max-width: 100%; }
+}
