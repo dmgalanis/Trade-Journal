@@ -166,3 +166,43 @@ export async function generateAiSummary(payload) {
   const data = await res.json()
   return data.summary
 }
+// ---------- BACKUP / RESTORE (append to src/lib/api.js) ----------
+// Calls the github-backup Edge Function, which holds the GitHub token
+// server-side and lists/triggers backups on your behalf.
+
+async function callBackupFunction(payload) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData?.session?.access_token
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const res = await fetch(`${supabaseUrl}/functions/v1/github-backup`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text)
+  }
+  return res.json()
+}
+
+export async function listBackups() {
+  const { backups } = await callBackupFunction({ action: 'list' })
+  return backups
+}
+
+export async function triggerBackup() {
+  return callBackupFunction({ action: 'trigger_backup' })
+}
+
+export async function triggerRestore(backupTag) {
+  return callBackupFunction({ action: 'trigger_restore', backup_tag: backupTag })
+}
+
+export async function getBackupRunStatus() {
+  return callBackupFunction({ action: 'status' })
+}
