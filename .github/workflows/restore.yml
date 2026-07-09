@@ -1,0 +1,59 @@
+name: Restore Database and Screenshots
+
+# Manual only, on purpose — this is destructive. Trigger it from the Actions
+# tab in the browser: Actions > Restore Database and Screenshots > Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_tag:
+        description: 'Release tag to restore (e.g. backup-2026-07-09-0600) — see the Releases page for available tags'
+        required: true
+      confirm:
+        description: 'Type RESTORE (all caps) to confirm — this overwrites current data and screenshots with the chosen backup'
+        required: true
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm intent
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "RESTORE" ]; then
+            echo "Confirmation text did not match 'RESTORE'. Aborting — nothing was changed."
+            exit 1
+          fi
+
+      - name: Install postgresql-client 17 (matches Supabase's Postgres version)
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Download backup asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "${{ github.event.inputs.backup_tag }}" \
+            --pattern '*.tar.gz' --dir .
+          tar -xzf *.tar.gz
+
+      - name: Restore database (drops and recreates tables exactly as backed up)
+        run: |
+          DIR=$(find . -maxdepth 1 -type d -name 'backup-*')
+          /usr/lib/postgresql/17/bin/psql "${{ secrets.SUPABASE_DB_URL }}" -f "$DIR/db_backup.sql"
+
+      - name: Restore screenshots (mirrors the bucket to match the backup exactly)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SUPABASE_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SUPABASE_S3_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.SUPABASE_S3_REGION }}
+        run: |
+          DIR=$(find . -maxdepth 1 -type d -name 'backup-*')
+          aws s3 sync "$DIR/storage/screenshots" "s3://screenshots" \
+            --endpoint-url "${{ secrets.SUPABASE_S3_ENDPOINT }}" \
+            --delete
+
+      - name: Done
+        run: echo "Restore complete from ${{ github.event.inputs.backup_tag }}"
