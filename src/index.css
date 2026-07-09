@@ -601,10 +601,13 @@ textarea {
 /* ===== Backup panel: discreet gear + slide-in panel ===== */
 /* Append this block to the end of src/index.css */
 
+.calendar-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
 .backup-gear-btn {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -616,7 +619,6 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 500;
   transition: opacity 0.15s ease, color 0.15s ease;
 }
 .backup-gear-btn:hover {
