@@ -491,3 +491,110 @@ textarea {
   .app-main { padding: 1rem 0.85rem 3rem; }
   .day-detail-header h2 { font-size: 1rem; }
 }
+/* ===== Analytics: additions for rule adherence / psychology / plan analytics ===== */
+/* Append this block to the end of src/index.css */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+.stat-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+.stat-value {
+  font-family: 'Newsreader', serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-top: 0.3rem;
+}
+.stat-sub {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+
+/* Rule trend list */
+.rule-trend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.rule-trend-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+}
+.rule-trend-name { color: var(--ink); }
+.rule-trend-counts {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.rule-trend-delta { font-weight: 600; font-size: 0.82rem; white-space: nowrap; }
+.delta-up { color: var(--accent-bad); }
+.delta-down { color: var(--accent-good); }
+.delta-flat { color: var(--ink-faint); }
+
+/* Heatmap */
+.heatmap-wrap { overflow-x: auto; }
+.heatmap-table {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  min-width: 100%;
+}
+.heatmap-table th, .heatmap-table td {
+  border: 1px solid var(--rule-line);
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.heatmap-table thead th {
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-weight: 500;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 90px;
+}
+.heatmap-table tbody th {
+  background: var(--paper-raised);
+  text-align: left;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* Pre-session plan / post-session review form fields */
+.plan-section .field-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0.9rem 0 0.35rem;
+}
+.plan-section .field-label:first-of-type { margin-top: 0.2rem; }
+.plan-section input[type="text"],
+.plan-section input[type="number"] {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+.plan-section textarea { margin: 0; }
