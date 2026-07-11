@@ -1,0 +1,41 @@
+name: Deploy market-calendar-sync Edge Function
+
+# The dashboard editor can't set verify_jwt = false (that's config.toml-only,
+# CLI-only as of Supabase's newer Edge Function auth model), so this function
+# has to be deployed this way rather than via the dashboard. Run this manually
+# any time you change supabase/functions/market-calendar-sync/index.ts.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Deploy market-calendar-sync function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase functions deploy market-calendar-sync --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Set function secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_API_BASE_URL: ${{ secrets.ALPACA_API_BASE_URL }}
+          MARKET_SYNC_SHARED_SECRET: ${{ secrets.MARKET_SYNC_SHARED_SECRET }}
+        run: |
+          supabase secrets set \
+            ALPACA_KEY_ID="$ALPACA_KEY_ID" \
+            ALPACA_SECRET_KEY="$ALPACA_SECRET_KEY" \
+            ALPACA_API_BASE_URL="$ALPACA_API_BASE_URL" \
+            MARKET_SYNC_SHARED_SECRET="$MARKET_SYNC_SHARED_SECRET" \
+            --project-ref "$SUPABASE_PROJECT_REF"
