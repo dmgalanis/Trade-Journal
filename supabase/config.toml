@@ -1,0 +1,13 @@
+# Supabase CLI project config. Only market-calendar-sync needs an entry here —
+# every other function keeps the platform default (verify_jwt = true), which is
+# correct for ai-summary and github-backup since those are called by a
+# signed-in user's browser session.
+#
+# market-calendar-sync is called by a scheduled GitHub Action with no logged-in
+# user, so the platform-level JWT gateway check has nothing to validate. Instead
+# of trying to fake a JWT, we turn the gateway check off for this function only
+# and have the function itself check a shared secret (see index.ts) — this is
+# Supabase's documented pattern for service-to-service / cron calls.
+
+[functions.market-calendar-sync]
+verify_jwt = false
