@@ -21,8 +21,8 @@ jobs:
           dow_et=$(TZ="America/New_York" date +%u) # 1=Mon ... 7=Sun
 
           total_min=$((10#$hour_et * 60 + 10#$min_et))
-          pre_start=$((8*60+45))   # 8:45am
-          pre_end=$((9*60+15))     # 9:15am cutoff
+          pre_start=$((0))
+          pre_end=$((23*60+59))
           post_start=$((20*60))    # 8:00pm
           post_end=$((20*60+30))   # 8:30pm cutoff
 
