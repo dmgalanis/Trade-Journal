@@ -245,9 +245,9 @@ input, textarea, select {
 .calendar-day.day-vacation::after {
   content: '🌴';
   position: absolute;
-  bottom: 1px;
-  right: 3px;
-  font-size: 1.4rem;
+  bottom: 3px;
+  right: 5px;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
@@ -267,7 +267,7 @@ input, textarea, select {
   color: var(--ink-soft);
 }
 .calendar-legend span { display: flex; align-items: center; gap: 0.4rem; }
-.legend-emoji { font-size: 0.95rem; line-height: 1; }
+.legend-emoji { font-size: 0.8rem; line-height: 1; }
 .dot {
   display: inline-flex;
   align-items: center;
@@ -649,6 +649,12 @@ textarea {
   .day-detail-header h2 { font-size: 0.92rem; }
   .back-btn { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
   .save-indicator { min-width: 44px; font-size: 0.68rem; }
+  .calendar-legend-row { gap: 0.5rem; flex-wrap: nowrap; }
+  .calendar-legend { gap: 0.55rem; font-size: 0.68rem; flex-wrap: nowrap; }
+  .calendar-legend span { gap: 0.25rem; white-space: nowrap; }
+  .calendar-legend .dot { width: 10px; height: 10px; }
+  .legend-emoji { font-size: 0.68rem; }
+  .backup-gear-btn { width: 26px; height: 26px; font-size: 0.85rem; flex-shrink: 0; }
 }
 
 /* ===== Plan sections (Pre-Session Plan / Post-Session Review) ===== */
