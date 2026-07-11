@@ -232,11 +232,18 @@ input, textarea, select {
   bottom: 6px;
 }
 
+.calendar-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
 .calendar-legend {
   display: flex;
   gap: 1.25rem;
   flex-wrap: wrap;
-  margin-top: 1rem;
   font-size: 0.8rem;
   color: var(--ink-soft);
 }
@@ -694,6 +701,7 @@ textarea {
   font-size: 1rem;
   color: var(--ink-faint);
   line-height: 1;
+  flex-shrink: 0;
 }
 .backup-gear-btn:hover { color: var(--ink-soft); border-color: var(--ink-soft); }
 
