@@ -239,6 +239,18 @@ input, textarea, select {
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 5L19 19M19 5L5 19'/%3E%3C/svg%3E");
 }
 
+/* Vacation / market-holiday marker — takes the same corner spot as the
+   check/X but uses an emoji directly rather than a mask, since it's
+   inherently multi-color. */
+.calendar-day.day-vacation::after {
+  content: '🌴';
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
 .calendar-legend-row {
   display: flex;
   align-items: center;
@@ -255,6 +267,7 @@ input, textarea, select {
   color: var(--ink-soft);
 }
 .calendar-legend span { display: flex; align-items: center; gap: 0.4rem; }
+.legend-emoji { font-size: 0.95rem; line-height: 1; }
 .dot {
   display: inline-flex;
   align-items: center;
