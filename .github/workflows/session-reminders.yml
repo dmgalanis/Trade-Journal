@@ -65,6 +65,9 @@ jobs:
             --data-urlencode "select=date")
           is_holiday="false"
           [ "$(echo "$holiday_check" | jq 'length')" -gt 0 ] && is_holiday="true"
+          # ===== TEST MODE: ignore actual holiday/weekend status =====
+          is_holiday="false"
+          # ===== END TEST MODE =====
 
           day_row=$(curl -s -G "$SUPABASE_URL/rest/v1/trading_days" \
             -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
