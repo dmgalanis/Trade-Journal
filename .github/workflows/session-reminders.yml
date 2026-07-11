@@ -21,10 +21,12 @@ jobs:
           dow_et=$(TZ="America/New_York" date +%u) # 1=Mon ... 7=Sun
 
           total_min=$((10#$hour_et * 60 + 10#$min_et))
+          # ===== TEST MODE: wide open all day =====
           pre_start=$((0))
           pre_end=$((23*60+59))
-          post_start=$((20*60))    # 8:00pm
-          post_end=$((20*60+30))   # 8:30pm cutoff
+          post_start=$((20*60))
+          post_end=$((20*60+30))
+          # ===== END TEST MODE =====
 
           mode=""
           if [ "$total_min" -ge "$pre_start" ] && [ "$total_min" -le "$pre_end" ]; then
@@ -38,7 +40,7 @@ jobs:
           echo "dow_et=$dow_et" >> "$GITHUB_OUTPUT"
 
       - name: Check calendar, vacation flag, entry, and reminder log
-        if: steps.time.outputs.mode != '' && steps.time.outputs.dow_et != '6' && steps.time.outputs.dow_et != '7'
+        if: steps.time.outputs.mode != ''
         id: check
         env:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
