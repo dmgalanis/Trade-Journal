@@ -164,6 +164,14 @@ input, textarea, select {
   text-align: center;
   font-size: 1.4rem;
 }
+.calendar-header-title {
+  cursor: pointer;
+  user-select: none;
+}
+.calendar-header-title:hover,
+.calendar-header-title:active {
+  color: var(--ink-soft);
+}
 .calendar-header button {
   background: none;
   border: 1px solid var(--rule-line);
