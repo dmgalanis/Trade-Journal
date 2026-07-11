@@ -282,8 +282,7 @@ input, textarea, select {
   background: var(--paper);
   height: var(--subnav-height);
   padding: 0;
-  box-shadow: 0 0 0 100vmax var(--paper), 0 1px 0 var(--rule-line);
-  clip-path: inset(0 -100vmax);
+  border-bottom: 1px solid var(--rule-line);
 }
 .day-detail-header h2 {
   grid-column: 2;
@@ -633,12 +632,17 @@ textarea {
   border: 1px solid var(--rule-line);
   border-radius: var(--radius);
   padding: 0.85rem 0.9rem;
+  min-width: 0;
 }
 .stat-value {
   font-family: 'Newsreader', serif;
   font-size: 1.5rem;
   font-weight: 500;
   color: var(--ink);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.25;
 }
 .stat-label {
   font-size: 0.78rem;
