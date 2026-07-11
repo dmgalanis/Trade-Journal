@@ -39,6 +39,9 @@ h1, h2, h3, h4 {
 button {
   font-family: 'Inter', sans-serif;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
 }
 
 input, textarea, select {
@@ -503,6 +506,71 @@ textarea {
   color: var(--ink);
 }
 
+/* ===== Analytics: Weekly/Monthly rollup sections ===== */
+.rollup-section { padding-top: 1rem; }
+.rollup-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+.rollup-nav h3 {
+  margin: 0;
+  min-width: 170px;
+  text-align: center;
+  font-size: 1rem;
+}
+.rollup-nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--rule-line);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 1rem;
+  color: var(--ink-soft);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.rollup-nav button:hover { background: var(--paper-raised); color: var(--ink); }
+
+.rollup-generate-btn {
+  display: block;
+  margin: 0 auto 0.9rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 500;
+  font-size: 0.88rem;
+}
+.rollup-generate-btn:disabled { opacity: 0.6; cursor: wait; }
+
+.ai-summary-box {
+  padding: 1rem 1.1rem;
+  background: var(--paper-raised);
+  border-left: 3px solid var(--accent-logged);
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+.ai-summary-box p { margin: 0 0 0.75rem; }
+.ai-summary-box p:last-child { margin-bottom: 0; }
+.ai-summary-box ul, .ai-summary-box ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+.ai-summary-box li { margin-bottom: 0.5rem; }
+.ai-summary-box li:last-child { margin-bottom: 0; }
+.ai-summary-box strong { color: var(--ink); font-weight: 600; }
+
 @media (max-width: 480px) {
   :root {
     --nav-height: 46px;
@@ -614,11 +682,15 @@ textarea {
   margin-top: 1.25rem;
 }
 .backup-gear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 1px solid var(--rule-line);
   border-radius: 50%;
   width: 30px;
   height: 30px;
+  padding: 0;
   font-size: 1rem;
   color: var(--ink-faint);
   line-height: 1;
