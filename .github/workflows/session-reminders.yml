@@ -22,8 +22,8 @@ jobs:
 
           total_min=$((10#$hour_et * 60 + 10#$min_et))
           # ===== TEST MODE: wide open all day =====
-          pre_start=$((8*60+45))   # 8:45am
-          pre_end=$((9*60+15))     # 9:15am cutoff
+          pre_start=$((0))
+          pre_end=$((23*60+59))
           post_start=$((0))
           post_end=$((23*60+59))
           # ===== END TEST MODE =====
