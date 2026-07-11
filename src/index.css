@@ -209,27 +209,34 @@ input, textarea, select {
 .day-outside .day-number { color: var(--ink-faint); opacity: 0.5; }
 .day-today { box-shadow: inset 0 0 0 2px var(--ink); }
 
-/* Check / X indicators - signature visual element */
+/* Check / X indicators - signature visual element.
+   Drawn as SVG shapes via mask-image rather than font glyphs (✓/✗), since
+   glyph weight and shape vary noticeably across OS/browser font rendering —
+   this way the marks are pixel-crisp and identical everywhere. */
 .calendar-day.day-good::after,
-.calendar-day.day-bad::after,
-.calendar-day.day-logged::after {
-  position: absolute;
-  bottom: 1px;
-  right: 3px;
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1;
-  transform: rotate(-6deg);
-}
-.day-good::after { content: '✓'; color: var(--accent-good); }
-.day-bad::after { content: '✕'; color: var(--accent-bad); }
-.day-logged::after {
+.calendar-day.day-bad::after {
   content: '';
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--accent-logged);
-  bottom: 6px;
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+.day-good::after {
+  background-color: var(--accent-good);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5L9.5 18L20 6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5L9.5 18L20 6'/%3E%3C/svg%3E");
+}
+.day-bad::after {
+  background-color: var(--accent-bad);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 5L19 19M19 5L5 19'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 5L19 19M19 5L5 19'/%3E%3C/svg%3E");
 }
 
 .calendar-legend-row {
@@ -254,19 +261,22 @@ input, textarea, select {
   justify-content: center;
   width: 14px;
   height: 14px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
-.dot-good { color: var(--accent-good); }
-.dot-good::before { content: '✓'; }
-.dot-bad { color: var(--accent-bad); }
-.dot-bad::before { content: '✕'; }
-.dot-logged {
-  border-radius: 50%;
-  border: 2px solid var(--accent-logged);
-  width: 10px;
-  height: 10px;
+.dot-good {
+  background-color: var(--accent-good);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5L9.5 18L20 6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5L9.5 18L20 6'/%3E%3C/svg%3E");
+}
+.dot-bad {
+  background-color: var(--accent-bad);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 5L19 19M19 5L5 19'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 5L19 19M19 5L5 19'/%3E%3C/svg%3E");
 }
 
 /* ===== Day detail / Analytics shared ===== */
