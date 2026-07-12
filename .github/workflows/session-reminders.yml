@@ -21,12 +21,10 @@ jobs:
           dow_et=$(TZ="America/New_York" date +%u) # 1=Mon ... 7=Sun
 
           total_min=$((10#$hour_et * 60 + 10#$min_et))
-          # ===== TEST MODE: wide open all day =====
-          pre_start=$((0))
-          pre_end=$((23*60+59))
-          post_start=$((0))
-          post_end=$((23*60+59))
-          # ===== END TEST MODE =====
+          pre_start=$((8*60+45))   # 8:45am
+          pre_end=$((9*60+15))     # 9:15am cutoff
+          post_start=$((20*60))    # 8:00pm
+          post_end=$((20*60+30))   # 8:30pm cutoff
 
           mode=""
           if [ "$total_min" -ge "$pre_start" ] && [ "$total_min" -le "$pre_end" ]; then
@@ -40,7 +38,7 @@ jobs:
           echo "dow_et=$dow_et" >> "$GITHUB_OUTPUT"
 
       - name: Check calendar, vacation flag, entry, and reminder log
-        if: steps.time.outputs.mode != ''
+        if: steps.time.outputs.mode != '' && steps.time.outputs.dow_et != '6' && steps.time.outputs.dow_et != '7'
         id: check
         env:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
@@ -65,9 +63,6 @@ jobs:
             --data-urlencode "select=date")
           is_holiday="false"
           [ "$(echo "$holiday_check" | jq 'length')" -gt 0 ] && is_holiday="true"
-          # ===== TEST MODE: ignore actual holiday/weekend status =====
-          is_holiday="false"
-          # ===== END TEST MODE =====
 
           day_row=$(curl -s -G "$SUPABASE_URL/rest/v1/trading_days" \
             -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
@@ -87,11 +82,6 @@ jobs:
               should_send="true"
             fi
           fi
-          echo "DEBUG: already_sent_count=$(echo "$already_sent" | jq 'length')"
-          echo "DEBUG: is_holiday=$is_holiday"
-          echo "DEBUG: on_vacation=$on_vacation"
-          echo "DEBUG: pre_mental_state='$pre_mental_state'"
-          echo "DEBUG: plan_followed=$plan_followed"
           echo "should_send=$should_send" >> "$GITHUB_OUTPUT"
 
       - name: Send Pushover reminder
