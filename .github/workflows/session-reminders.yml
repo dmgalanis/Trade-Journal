@@ -1,11 +1,6 @@
 name: Session Reminders
 
 on:
-  schedule:
-    # Pre-session window: 8:45am ET forward through 9:15am, across EDT/EST
-    - cron: '*/15 12-13 * * *'
-    # Post-session window: 8:00pm ET forward through 8:30pm, across EDT/EST
-    - cron: '*/15 0-1 * * *'
   workflow_dispatch: {}
 
 jobs:
