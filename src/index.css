@@ -886,3 +886,42 @@ textarea {
   color: var(--ink-soft);
   font-size: 0.82rem;
 }
+/* ===== Lightbox navigation (multi-screenshot paging) ===== */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(238, 239, 231, 0.15);
+  border: 1px solid rgba(238, 239, 231, 0.4);
+  color: var(--paper);
+  font-size: 2rem;
+  line-height: 1;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox-nav:hover { background: rgba(238, 239, 231, 0.3); }
+.lightbox-prev { left: 1rem; }
+.lightbox-next { right: 1rem; }
+
+.lightbox-counter {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--paper);
+  font-size: 0.85rem;
+  font-family: 'IBM Plex Mono', monospace;
+  background: rgba(31, 42, 36, 0.5);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius);
+}
+
+@media (max-width: 480px) {
+  .lightbox-nav { width: 40px; height: 40px; font-size: 1.6rem; }
+  .lightbox-prev { left: 0.4rem; }
+  .lightbox-next { right: 0.4rem; }
+}
