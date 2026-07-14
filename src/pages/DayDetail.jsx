@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import EditableChecklist from '../components/EditableChecklist'
 import EditableDropdown from '../components/EditableDropdown'
-import FormattedSummary from '../components/FormattedSummary'
 import {
   getMasterList,
   addMasterItem,
@@ -39,11 +38,7 @@ export default function DayDetail() {
   const [improvements, setImprovements] = useState('')
   const [aiSummary, setAiSummary] = useState('')
   const [screenshots, setScreenshots] = useState([]) // [{id, storage_path, url}]
-  const [lightboxUrl, setLightboxUrl] = useState(null)
-
-  // On Vacation — excludes this day from Journaling Consistency entirely
-  // (same treatment as a market holiday) so time off doesn't count against it.
-  const [onVacation, setOnVacation] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(null) // index into screenshots, or null
 
   // Pre-Session Plan
   const [preMaxLoss, setPreMaxLoss] = useState('')
@@ -57,6 +52,7 @@ export default function DayDetail() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [generatingSummary, setGeneratingSummary] = useState(false)
 
   const loadAll = useCallback(async () => {
@@ -84,7 +80,6 @@ export default function DayDetail() {
       setAiSummary(dayEntry.ai_summary || '')
       setSelectedViolations((dayEntry.day_violations || []).map((v) => v.rule_id))
       setSelectedEmotions((dayEntry.day_emotions || []).map((e) => e.emotion_id))
-      setOnVacation(dayEntry.on_vacation || false)
 
       setPreMaxLoss(dayEntry.pre_max_loss ?? '')
       setPreSetups(dayEntry.pre_setups || '')
@@ -109,7 +104,6 @@ export default function DayDetail() {
       setSelectedViolations([])
       setSelectedEmotions([])
       setScreenshots([])
-      setOnVacation(false)
       setPreMaxLoss('')
       setPreSetups('')
       setPreMentalState('')
@@ -124,22 +118,27 @@ export default function DayDetail() {
     loadAll()
   }, [loadAll])
 
+  // Keyboard navigation while the lightbox is open: ← / → to page, Esc to close
+  useEffect(() => {
+    if (lightboxIndex === null) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') {
+        setLightboxIndex((i) => (i - 1 + screenshots.length) % screenshots.length)
+      } else if (e.key === 'ArrowRight') {
+        setLightboxIndex((i) => (i + 1) % screenshots.length)
+      } else if (e.key === 'Escape') {
+        setLightboxIndex(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxIndex, screenshots.length])
+
   // Ensures a trading_days row exists, returns its id
   const ensureDayRow = async (fields = {}) => {
     const row = await upsertTradingDay(user.id, date, fields)
     setTradingDayId(row.id)
     return row.id
-  }
-
-  const handleVacationToggle = async () => {
-    const next = !onVacation
-    setOnVacation(next)
-    setSaving(true)
-    try {
-      await ensureDayRow({ on_vacation: next })
-    } finally {
-      setSaving(false)
-    }
   }
 
   const handleFollowedRules = async (value) => {
@@ -242,16 +241,25 @@ export default function DayDetail() {
     setList((prev) => prev.filter((i) => i.id !== id))
   }
 
+  // Handles one or many files selected at once. Uploads run in parallel,
+  // then all new screenshots are appended to state together.
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setUploading(true)
     setSaving(true)
     try {
       const id = tradingDayId || (await ensureDayRow())
-      const record = await uploadScreenshot(user.id, id, file)
-      const url = await getScreenshotUrl(record.storage_path)
-      setScreenshots((prev) => [...prev, { ...record, url }])
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const record = await uploadScreenshot(user.id, id, file)
+          const url = await getScreenshotUrl(record.storage_path)
+          return { ...record, url }
+        })
+      )
+      setScreenshots((prev) => [...prev, ...uploaded])
     } finally {
+      setUploading(false)
       setSaving(false)
       e.target.value = ''
     }
@@ -260,6 +268,7 @@ export default function DayDetail() {
   const handleDeleteScreenshot = async (shot) => {
     await deleteScreenshot(shot.id, shot.storage_path)
     setScreenshots((prev) => prev.filter((s) => s.id !== shot.id))
+    setLightboxIndex(null)
   }
 
   const handleGenerateSummary = async () => {
@@ -310,18 +319,6 @@ export default function DayDetail() {
         </button>
         <h2>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</h2>
         <span className="save-indicator">{saving ? 'Saving…' : ''}</span>
-      </div>
-
-      <div className="vacation-toggle-row">
-        <button
-          type="button"
-          className={`vacation-toggle-btn ${onVacation ? 'active' : ''}`}
-          onClick={handleVacationToggle}
-          aria-pressed={onVacation}
-        >
-          <span className="vacation-icon">🌴</span>
-          {onVacation ? 'On Vacation' : 'Mark as Vacation'}
-        </button>
       </div>
 
       <section className="day-section plan-section">
@@ -463,11 +460,12 @@ export default function DayDetail() {
 
       <section className="day-section">
         <h3>Screenshots</h3>
-        <input type="file" accept="image/*" onChange={handleFileUpload} />
+        <input type="file" accept="image/*" multiple onChange={handleFileUpload} />
+        {uploading && <p className="loading-note">Uploading…</p>}
         <div className="screenshot-grid">
-          {screenshots.map((s) => (
+          {screenshots.map((s, idx) => (
             <div key={s.id} className="screenshot-thumb">
-              <img src={s.url} alt="Trade screenshot" onClick={() => setLightboxUrl(s.url)} />
+              <img src={s.url} alt="Trade screenshot" onClick={() => setLightboxIndex(idx)} />
               <button className="delete-x" onClick={() => handleDeleteScreenshot(s)}>
                 ×
               </button>
@@ -476,10 +474,48 @@ export default function DayDetail() {
         </div>
       </section>
 
-      {lightboxUrl && (
-        <div className="lightbox-overlay" onClick={() => setLightboxUrl(null)}>
-          <img src={lightboxUrl} alt="Trade screenshot full size" className="lightbox-image" />
-          <button className="lightbox-close" onClick={() => setLightboxUrl(null)}>×</button>
+      {lightboxIndex !== null && screenshots[lightboxIndex] && (
+        <div className="lightbox-overlay" onClick={() => setLightboxIndex(null)}>
+          {screenshots.length > 1 && (
+            <button
+              className="lightbox-nav lightbox-prev"
+              onClick={(e) => {
+                e.stopPropagation()
+                setLightboxIndex((i) => (i - 1 + screenshots.length) % screenshots.length)
+              }}
+              aria-label="Previous screenshot"
+            >
+              ‹
+            </button>
+          )}
+
+          <img
+            src={screenshots[lightboxIndex].url}
+            alt="Trade screenshot full size"
+            className="lightbox-image"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {screenshots.length > 1 && (
+            <button
+              className="lightbox-nav lightbox-next"
+              onClick={(e) => {
+                e.stopPropagation()
+                setLightboxIndex((i) => (i + 1) % screenshots.length)
+              }}
+              aria-label="Next screenshot"
+            >
+              ›
+            </button>
+          )}
+
+          {screenshots.length > 1 && (
+            <span className="lightbox-counter">
+              {lightboxIndex + 1} / {screenshots.length}
+            </span>
+          )}
+
+          <button className="lightbox-close" onClick={() => setLightboxIndex(null)}>×</button>
         </div>
       )}
 
@@ -521,11 +557,7 @@ export default function DayDetail() {
         <button onClick={handleGenerateSummary} disabled={generatingSummary}>
           {generatingSummary ? 'Generating…' : aiSummary ? 'Regenerate Summary' : 'Generate Summary'}
         </button>
-        {aiSummary && (
-          <div className="ai-summary-box">
-            <FormattedSummary text={aiSummary} />
-          </div>
-        )}
+        {aiSummary && <p className="ai-summary-text">{aiSummary}</p>}
       </section>
     </div>
   )
