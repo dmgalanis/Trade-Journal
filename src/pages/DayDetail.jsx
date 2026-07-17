@@ -16,8 +16,11 @@ import {
   getScreenshotUrl,
   deleteScreenshot,
   generateAiSummary,
+  getAnalyticsRawData,
+  getMarketCalendarDays,
 } from '../lib/api'
-import { format, parseISO } from 'date-fns'
+import { getAiSummaryContext } from '../lib/analytics'
+import { format, parseISO, subDays } from 'date-fns'
 
 export default function DayDetail() {
   const { date } = useParams() // yyyy-MM-dd
@@ -301,6 +304,15 @@ export default function DayDetail() {
       const marketConditionName = marketConditions.find((m) => m.id === marketConditionId)?.name
       const volatilityName = volatilities.find((v) => v.id === volatilityId)?.name
 
+      // Pull historical data so the summary can flag repeat patterns, streaks,
+      // day-after risk, and day-of-week trends instead of judging this day in isolation.
+      const rangeStart = format(subDays(parseISO(date), 90), 'yyyy-MM-dd')
+      const [analyticsRows, calendarDays] = await Promise.all([
+        getAnalyticsRawData(user.id),
+        getMarketCalendarDays(rangeStart, date),
+      ])
+      const context = getAiSummaryContext(analyticsRows, calendarDays, date, violationNames, emotionNames)
+
       const summary = await generateAiSummary({
         entry_date: date,
         followed_rules: followedRules,
@@ -317,6 +329,7 @@ export default function DayDetail() {
         pre_notes: preNotes,
         plan_followed: planFollowed,
         plan_deviation_notes: planDeviationNotes,
+        context,
       })
       setAiSummary(summary)
       await ensureDayRow({ ai_summary: summary })
