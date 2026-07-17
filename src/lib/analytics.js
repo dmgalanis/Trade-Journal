@@ -389,14 +389,54 @@ export function getPeriodStats(rows, startDate, endDateExclusive) {
   }
 }
 
+// ---------- Vacation-return context ----------
+
+// Walks backward through logged rows immediately preceding entryDate and
+// counts how many consecutive trailing entries are marked on_vacation. Used
+// to flag a rough day right after time off as a possible re-entry/rust day
+// rather than folding it into ordinary streak/pattern math. Best-effort: only
+// knows about vacation days that were actually logged, so an unlogged gap
+// (no entries at all) won't be detected here.
+export function getVacationReturnContext(rows, entryDate) {
+  const priorSorted = [...rows]
+    .filter((r) => r.entry_date < entryDate)
+    .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+
+  let count = 0
+  let lastVacationDate = null
+  for (let i = priorSorted.length - 1; i >= 0; i--) {
+    if (priorSorted[i].on_vacation) {
+      count += 1
+      lastVacationDate = lastVacationDate || priorSorted[i].entry_date
+    } else {
+      break
+    }
+  }
+
+  return {
+    returningFromVacation: count > 0,
+    vacationDaysBeforeEntry: count,
+    lastVacationDate,
+  }
+}
+
 // ---------- AI summary context (per-day pattern lookup) ----------
 
 // Given the full analytics rows, the market calendar, a specific entry_date,
-// and the violation/emotion names selected for THAT day, returns a compact
-// object describing how today's entry fits historical patterns. Everything
-// here is computed from rows strictly BEFORE entryDate, so it reads as prior
-// context feeding into today rather than today influencing itself.
-export function getAiSummaryContext(rows, calendarDays, entryDate, todayViolations = [], todayEmotions = []) {
+// the violation/emotion names selected for THAT day, and (optionally) today's
+// market condition / volatility type, returns a compact object describing how
+// today's entry fits historical patterns. Everything here is computed from
+// rows strictly BEFORE entryDate, so it reads as prior context feeding into
+// today rather than today influencing itself.
+export function getAiSummaryContext(
+  rows,
+  calendarDays,
+  entryDate,
+  todayViolations = [],
+  todayEmotions = [],
+  todayMarketCondition = null,
+  todayVolatility = null
+) {
   const priorRows = rows.filter((r) => r.entry_date < entryDate)
 
   // How often each of today's violated rules has come up before, and its rank.
@@ -424,6 +464,16 @@ export function getAiSummaryContext(rows, calendarDays, entryDate, todayViolatio
       : { name, violationRate: null, baselineViolationRate: null, delta: null }
   })
 
+  // Historical violation rate for today's market condition / volatility type, if set.
+  const marketConditionRates = getConditionViolationRates(priorRows, 'market_conditions_master')
+  const volatilityRates = getConditionViolationRates(priorRows, 'volatility_master')
+  const marketConditionPattern = todayMarketCondition
+    ? marketConditionRates.find((c) => c.name === todayMarketCondition) || null
+    : null
+  const volatilityPattern = todayVolatility
+    ? volatilityRates.find((c) => c.name === todayVolatility) || null
+    : null
+
   // The single most recent prior logged day, for a concrete "yesterday was X" note.
   const loggedPrior = [...priorRows]
     .filter((r) => r.followed_rules !== null)
@@ -444,15 +494,22 @@ export function getAiSummaryContext(rows, calendarDays, entryDate, todayViolatio
 
   const weeklyRollup = getWeeklyRollup(priorRows, parseISO(entryDate))
 
+  // Whether this entry follows a marked vacation break, so a rough day can be
+  // read as possible rust/re-entry rather than a resumed discipline pattern.
+  const vacationContext = getVacationReturnContext(rows, entryDate)
+
   return {
     violationPatterns,
     emotionPatterns,
+    marketConditionPattern,
+    volatilityPattern,
     previousDay,
     dayAfterEffect,
     streaks,
     rollingAdherence,
     dayOfWeek: { day: DOW_LABELS[dow], violationRate: dowBucket.violationRate, sample: dowBucket.total },
     weeklyRollup,
+    vacationContext,
   }
 }
 
@@ -461,8 +518,9 @@ export function getAiSummaryContext(rows, calendarDays, entryDate, todayViolatio
 // Returns the full text + structured data for every logged day in the `days`
 // window strictly before entryDate, oldest first. Unlike getAiSummaryContext
 // (which reduces history to stats), this hands the model your actual raw
-// journal text across multiple days so it can reason about follow-through,
-// contradictions, and recurring language — not just recompute rates.
+// journal text across multiple days — including each day's own prior AI
+// summary, so it can check whether ITS OWN past advice was followed, not
+// just whether you followed your own self-written notes.
 export function getRecentQualitativeHistory(rows, entryDate, days = 14) {
   const cutoff = subDays(parseISO(entryDate), days)
   return rows
@@ -470,6 +528,7 @@ export function getRecentQualitativeHistory(rows, entryDate, days = 14) {
     .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
     .map((r) => ({
       entry_date: r.entry_date,
+      on_vacation: r.on_vacation || false,
       followed_rules: r.followed_rules,
       violations: ruleNames(r),
       emotions: emotionNames(r),
@@ -482,6 +541,7 @@ export function getRecentQualitativeHistory(rows, entryDate, days = 14) {
       improvements: r.improvements || null,
       plan_followed: r.plan_followed,
       plan_deviation_notes: r.plan_deviation_notes || null,
+      ai_summary: r.ai_summary || null,
     }))
 }
 
