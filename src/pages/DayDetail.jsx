@@ -305,16 +305,26 @@ export default function DayDetail() {
       const volatilityName = volatilities.find((v) => v.id === volatilityId)?.name
 
       // Pull historical data so the summary can flag repeat patterns, streaks,
-      // day-after risk, and day-of-week trends instead of judging this day in isolation.
+      // day-after risk, market-condition/volatility risk, vacation re-entry
+      // effects, and day-of-week trends instead of judging this day in isolation.
       const rangeStart = format(subDays(parseISO(date), 90), 'yyyy-MM-dd')
       const [analyticsRows, calendarDays] = await Promise.all([
         getAnalyticsRawData(user.id),
         getMarketCalendarDays(rangeStart, date),
       ])
-      const context = getAiSummaryContext(analyticsRows, calendarDays, date, violationNames, emotionNames)
-      // Full raw text (notes, improvements, plan deviations, etc.) from the last 14
-      // logged days, so the model can check follow-through and contradictions across
-      // entries instead of just narrating stats.
+      const context = getAiSummaryContext(
+        analyticsRows,
+        calendarDays,
+        date,
+        violationNames,
+        emotionNames,
+        marketConditionName,
+        volatilityName
+      )
+      // Full raw text (notes, improvements, plan deviations, prior AI summaries, etc.)
+      // from the last 14 logged days, so the model can check follow-through and
+      // contradictions across entries — including checking its OWN prior advice —
+      // instead of just narrating stats.
       const recentHistory = getRecentQualitativeHistory(analyticsRows, date, 14)
 
       const summary = await generateAiSummary({
