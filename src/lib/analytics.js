@@ -388,7 +388,72 @@ export function getPeriodStats(rows, startDate, endDateExclusive) {
       .map((r) => ({ date: r.entry_date, summary: r.ai_summary })),
   }
 }
+// ---------- AI summary context (per-day pattern lookup) ----------
 
+// Given the full analytics rows, the market calendar, a specific entry_date,
+// and the violation/emotion names selected for THAT day, returns a compact
+// object describing how today's entry fits historical patterns. Everything
+// here is computed from rows strictly BEFORE entryDate, so it reads as prior
+// context feeding into today rather than today influencing itself.
+export function getAiSummaryContext(rows, calendarDays, entryDate, todayViolations = [], todayEmotions = []) {
+  const priorRows = rows.filter((r) => r.entry_date < entryDate)
+
+  // How often each of today's violated rules has come up before, and its rank.
+  const ruleFreq = getRuleFrequency(priorRows)
+  const ruleRankMap = new Map(ruleFreq.map((r, i) => [r.name, { count: r.count, rank: i + 1 }]))
+  const violationPatterns = todayViolations.map((name) => {
+    const info = ruleRankMap.get(name)
+    return info
+      ? { name, priorCount: info.count, rank: info.rank, isTopPattern: info.rank <= 3 }
+      : { name, priorCount: 0, rank: null, isTopPattern: false }
+  })
+
+  // Historical violation-rate lift for each of today's emotions vs baseline.
+  const emotionCorr = getEmotionViolationCorrelation(priorRows, 2)
+  const emotionCorrMap = new Map(emotionCorr.map((e) => [e.name, e]))
+  const emotionPatterns = todayEmotions.map((name) => {
+    const info = emotionCorrMap.get(name)
+    return info
+      ? {
+          name,
+          violationRate: info.violationRate,
+          baselineViolationRate: info.baselineViolationRate,
+          delta: info.delta,
+        }
+      : { name, violationRate: null, baselineViolationRate: null, delta: null }
+  })
+
+  // The single most recent prior logged day, for a concrete "yesterday was X" note.
+  const loggedPrior = [...priorRows]
+    .filter((r) => r.followed_rules !== null)
+    .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+  const lastLogged = loggedPrior[loggedPrior.length - 1]
+  const previousDay = lastLogged
+    ? { date: lastLogged.entry_date, followedRules: lastLogged.followed_rules }
+    : null
+
+  // General historical "day after a violation" rates, for the trajectory framing.
+  const dayAfterEffect = getDayAfterEffect(priorRows, calendarDays)
+
+  const streaks = getStreaks(priorRows)
+  const rollingAdherence = getRollingAdherence(priorRows)
+
+  const dow = parseISO(entryDate).getDay()
+  const dowBucket = getDayOfWeekBreakdown(priorRows)[dow]
+
+  const weeklyRollup = getWeeklyRollup(priorRows, parseISO(entryDate))
+
+  return {
+    violationPatterns,
+    emotionPatterns,
+    previousDay,
+    dayAfterEffect,
+    streaks,
+    rollingAdherence,
+    dayOfWeek: { day: DOW_LABELS[dow], violationRate: dowBucket.violationRate, sample: dowBucket.total },
+    weeklyRollup,
+  }
+}
 // ---------- Convenience: compute everything at once ----------
 
 // calendarDays: optional array from getMarketCalendarDays(). Pass it through
