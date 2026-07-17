@@ -388,6 +388,7 @@ export function getPeriodStats(rows, startDate, endDateExclusive) {
       .map((r) => ({ date: r.entry_date, summary: r.ai_summary })),
   }
 }
+
 // ---------- AI summary context (per-day pattern lookup) ----------
 
 // Given the full analytics rows, the market calendar, a specific entry_date,
@@ -454,6 +455,36 @@ export function getAiSummaryContext(rows, calendarDays, entryDate, todayViolatio
     weeklyRollup,
   }
 }
+
+// ---------- Recent qualitative history (for deep cross-day AI analysis) ----------
+
+// Returns the full text + structured data for every logged day in the `days`
+// window strictly before entryDate, oldest first. Unlike getAiSummaryContext
+// (which reduces history to stats), this hands the model your actual raw
+// journal text across multiple days so it can reason about follow-through,
+// contradictions, and recurring language — not just recompute rates.
+export function getRecentQualitativeHistory(rows, entryDate, days = 14) {
+  const cutoff = subDays(parseISO(entryDate), days)
+  return rows
+    .filter((r) => r.entry_date < entryDate && parseISO(r.entry_date) >= cutoff)
+    .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+    .map((r) => ({
+      entry_date: r.entry_date,
+      followed_rules: r.followed_rules,
+      violations: ruleNames(r),
+      emotions: emotionNames(r),
+      market_condition: r.market_conditions_master?.name ?? null,
+      volatility: r.volatility_master?.name ?? null,
+      pre_mental_state: r.pre_mental_state || null,
+      pre_setups: r.pre_setups || null,
+      pre_notes: r.pre_notes || null,
+      notes: r.notes || null,
+      improvements: r.improvements || null,
+      plan_followed: r.plan_followed,
+      plan_deviation_notes: r.plan_deviation_notes || null,
+    }))
+}
+
 // ---------- Convenience: compute everything at once ----------
 
 // calendarDays: optional array from getMarketCalendarDays(). Pass it through
