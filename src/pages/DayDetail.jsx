@@ -19,7 +19,7 @@ import {
   getAnalyticsRawData,
   getMarketCalendarDays,
 } from '../lib/api'
-import { getAiSummaryContext } from '../lib/analytics'
+import { getAiSummaryContext, getRecentQualitativeHistory } from '../lib/analytics'
 import { format, parseISO, subDays } from 'date-fns'
 
 export default function DayDetail() {
@@ -312,6 +312,10 @@ export default function DayDetail() {
         getMarketCalendarDays(rangeStart, date),
       ])
       const context = getAiSummaryContext(analyticsRows, calendarDays, date, violationNames, emotionNames)
+      // Full raw text (notes, improvements, plan deviations, etc.) from the last 14
+      // logged days, so the model can check follow-through and contradictions across
+      // entries instead of just narrating stats.
+      const recentHistory = getRecentQualitativeHistory(analyticsRows, date, 14)
 
       const summary = await generateAiSummary({
         entry_date: date,
@@ -330,6 +334,7 @@ export default function DayDetail() {
         plan_followed: planFollowed,
         plan_deviation_notes: planDeviationNotes,
         context,
+        recent_history: recentHistory,
       })
       setAiSummary(summary)
       await ensureDayRow({ ai_summary: summary })
