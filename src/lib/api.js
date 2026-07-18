@@ -129,7 +129,7 @@ export async function uploadScreenshot(userId, tradingDayId, file) {
 export async function getScreenshotUrl(storagePath) {
   const { data, error } = await supabase.storage
     .from('screenshots')
-    .createSignedUrl(storagePath, 60 * 60) // 1 hour
+    .createSignedUrl(storagePath, 60 * 60 * 24 * 7) // 1 week
   if (error) throw error
   return data.signedUrl
 }
