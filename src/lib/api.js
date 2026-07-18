@@ -122,6 +122,23 @@ export async function deleteScreenshot(id, storagePath) {
   if (error) throw error
 }
 
+// Pulls screenshots (just storage paths, grouped by entry_date) from trading_days
+// entries in [startDate, endDateExclusive) — used to link a position opened a
+// few days ago to today's exit, so the AI summary isn't limited to same-day
+// round-trips. Signed URLs are generated client-side per screenshot, same as
+// the current day's own screenshots.
+export async function getRecentScreenshots(userId, startDate, endDateExclusive) {
+  const { data, error } = await supabase
+    .from('trading_days')
+    .select('entry_date, screenshots(storage_path)')
+    .eq('user_id', userId)
+    .gte('entry_date', startDate)
+    .lt('entry_date', endDateExclusive)
+    .order('entry_date', { ascending: true })
+  if (error) throw error
+  return data
+}
+
 // ---------- ANALYTICS ----------
 
 // Single wide fetch: pulls every trading_days row plus its joined violations,
