@@ -18,9 +18,16 @@ import {
   generateAiSummary,
   getAnalyticsRawData,
   getMarketCalendarDays,
+  getRecentScreenshots,
 } from '../lib/api'
-import { getAiSummaryContext, getRecentQualitativeHistory } from '../lib/analytics'
+import {
+  getAiSummaryContext,
+  getRecentQualitativeHistory,
+  getScreenshotLookbackStartDate,
+} from '../lib/analytics'
 import { format, parseISO, subDays } from 'date-fns'
+
+const SCREENSHOT_LOOKBACK_DAYS = 3
 
 export default function DayDetail() {
   const { date } = useParams() // yyyy-MM-dd
@@ -327,6 +334,24 @@ export default function DayDetail() {
       // instead of just narrating stats.
       const recentHistory = getRecentQualitativeHistory(analyticsRows, date, 14)
 
+      // Screenshots from the last few TRADING days (not flat calendar days), so a
+      // position opened right before a holiday/weekend cluster still gets linked to
+      // today's exit instead of silently falling outside the window. Bounded to keep
+      // image volume/cost sane — anything held longer than this falls back to the
+      // unmatched-row handling in the prompt rather than being silently guessed at.
+      const screenshotRangeStart = getScreenshotLookbackStartDate(calendarDays, date, SCREENSHOT_LOOKBACK_DAYS)
+      const recentScreenshotDays = await getRecentScreenshots(user.id, screenshotRangeStart, date)
+      const recentScreenshots = (
+        await Promise.all(
+          recentScreenshotDays.map(async (day) => {
+            const shots = day.screenshots || []
+            if (!shots.length) return null
+            const urls = await Promise.all(shots.map((s) => getScreenshotUrl(s.storage_path)))
+            return { entry_date: day.entry_date, screenshot_urls: urls }
+          })
+        )
+      ).filter(Boolean)
+
       const summary = await generateAiSummary({
         entry_date: date,
         followed_rules: followedRules,
@@ -345,6 +370,7 @@ export default function DayDetail() {
         plan_deviation_notes: planDeviationNotes,
         context,
         recent_history: recentHistory,
+        recent_screenshots: recentScreenshots,
       })
       setAiSummary(summary)
       await ensureDayRow({ ai_summary: summary })
