@@ -2,7 +2,7 @@
 // raw trading_days rows returned by getAnalyticsRawData(). No network calls here —
 // everything is plain JS so it's easy to test and cheap to re-run on every render.
 
-import { parseISO, subDays, differenceInCalendarDays } from 'date-fns'
+import { parseISO, subDays, differenceInCalendarDays, format } from 'date-fns'
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -418,6 +418,37 @@ export function getVacationReturnContext(rows, entryDate) {
     vacationDaysBeforeEntry: count,
     lastVacationDate,
   }
+}
+
+// ---------- Screenshot lookback window (trading-day aware) ----------
+
+// Returns the 'yyyy-MM-dd' date to use as the START of a screenshot fetch range,
+// such that the range [start, entryDate) contains the last `days` actual trading
+// days before entryDate — skipping weekends and holidays via calendarDays, the
+// same way getDayAfterEffect does. This matters specifically for cross-day trade
+// linking: a flat "N calendar days back" window can silently exclude a position
+// opened right before a holiday+weekend stretch, even though only a couple of
+// real trading days actually passed. Falls back to a wider flat buffer if the
+// market calendar hasn't been synced yet, since we can't safely assume weekdays
+// are trading days without it.
+export function getScreenshotLookbackStartDate(calendarDays, entryDate, days = 3) {
+  if (!calendarDays || calendarDays.length === 0) {
+    // No calendar data — use a generous flat buffer (2x + a few days) so a
+    // holiday/weekend cluster is less likely to silently eat the window.
+    return format(subDays(parseISO(entryDate), days * 2 + 3), 'yyyy-MM-dd')
+  }
+
+  const openDatesBefore = calendarDays
+    .filter((d) => d.is_open && d.date < entryDate)
+    .map((d) => d.date)
+    .sort()
+
+  if (openDatesBefore.length === 0) {
+    return format(subDays(parseISO(entryDate), days * 2 + 3), 'yyyy-MM-dd')
+  }
+
+  const lastNTradingDays = openDatesBefore.slice(-days)
+  return lastNTradingDays[0]
 }
 
 // ---------- AI summary context (per-day pattern lookup) ----------
