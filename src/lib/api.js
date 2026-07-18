@@ -70,6 +70,12 @@ export async function getMonthTradingDays(userId, year, month) {
 // cached alongside the last full analytics fetch — if they match, nothing has
 // changed since and the full wide fetch can be skipped. Returns null if the
 // user has no trading_days rows yet (not an error, just "nothing logged").
+//
+// Relies on trading_days.updated_at being bumped on every change that affects
+// analytics — including violation/emotion edits, which only touch the
+// separate day_violations/day_emotions tables. See touchTradingDay() below,
+// which DayDetail.jsx calls after those writes specifically to keep this
+// check accurate.
 export async function getLatestTradingDayUpdate(userId) {
   const { data, error } = await supabase
     .from('trading_days')
@@ -93,6 +99,20 @@ export async function upsertTradingDay(userId, entryDate, fields) {
     .single()
   if (error) throw error
   return data
+}
+
+// Bumps a trading_days row's updated_at without changing any other field.
+// Needed because writes to day_violations/day_emotions (via setDayViolations/
+// setDayEmotions below) go to those separate join tables and don't touch
+// trading_days.updated_at on their own — without this, a violation- or
+// emotion-only edit could be invisible to the Analytics staleness check
+// (getLatestTradingDayUpdate above) until some other field on the day changes.
+export async function touchTradingDay(tradingDayId) {
+  const { error } = await supabase
+    .from('trading_days')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', tradingDayId)
+  if (error) throw error
 }
 
 export async function setDayViolations(tradingDayId, ruleIds) {
