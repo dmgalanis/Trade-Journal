@@ -160,6 +160,15 @@ export default function Analytics() {
     try {
       const endExclusive = addWeeks(weekStart, 1)
       const stats = getPeriodStats(rows, weekStart, endExclusive)
+
+      // Previous week's stats, for period-over-period comparison in the rollup.
+      // Only included if there's actually data for it — the edge function
+      // gracefully skips the comparison block when these come back undefined.
+      const prevWeekStart = subWeeks(weekStart, 1)
+      const prevWeekEndExclusive = weekStart
+      const prevStats = getPeriodStats(rows, prevWeekStart, prevWeekEndExclusive)
+      const hasPrevWeekData = prevStats.daysLogged > 0
+
       const summary = await generateRollupSummary({
         period_type: 'week',
         period_label: `Week of ${format(weekStart, 'MMMM d, yyyy')}`,
@@ -170,6 +179,12 @@ export default function Analytics() {
         top_violations: stats.topViolations,
         top_emotions: stats.topEmotions,
         daily_summaries: stats.dailySummaries,
+        ...(hasPrevWeekData && {
+          previous_days_logged: prevStats.daysLogged,
+          previous_total_days_in_period: 7,
+          previous_adherence: prevStats.adherence,
+          previous_plan_adherence: prevStats.planAdherence,
+        }),
       })
       setWeekSummary(summary)
       await saveRollupSummary(user.id, 'week', format(weekStart, 'yyyy-MM-dd'), summary)
@@ -185,6 +200,14 @@ export default function Analytics() {
     try {
       const endExclusive = addMonths(monthStart, 1)
       const stats = getPeriodStats(rows, monthStart, endExclusive)
+
+      // Previous month's stats, for period-over-period comparison in the rollup.
+      // Only included if there's actually data for it.
+      const prevMonthStart = subMonths(monthStart, 1)
+      const prevMonthEndExclusive = monthStart
+      const prevStats = getPeriodStats(rows, prevMonthStart, prevMonthEndExclusive)
+      const hasPrevMonthData = prevStats.daysLogged > 0
+
       const summary = await generateRollupSummary({
         period_type: 'month',
         period_label: format(monthStart, 'MMMM yyyy'),
@@ -195,6 +218,12 @@ export default function Analytics() {
         top_violations: stats.topViolations,
         top_emotions: stats.topEmotions,
         daily_summaries: stats.dailySummaries,
+        ...(hasPrevMonthData && {
+          previous_days_logged: prevStats.daysLogged,
+          previous_total_days_in_period: getDaysInMonth(prevMonthStart),
+          previous_adherence: prevStats.adherence,
+          previous_plan_adherence: prevStats.planAdherence,
+        }),
       })
       setMonthSummary(summary)
       await saveRollupSummary(user.id, 'month', format(monthStart, 'yyyy-MM-dd'), summary)
