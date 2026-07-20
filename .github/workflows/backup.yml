@@ -1,12 +1,14 @@
 name: Backup Supabase
 
+# Trigger now comes from Supabase pg_cron (see migration_daily_backup_cron.sql),
+# which calls the github-backup Edge Function daily at 07:00 UTC; that function
+# dispatches this workflow the same way the in-app "Back Up Now" button does.
+# GitHub's own `schedule:` trigger was removed — GitHub documents scheduled runs
+# as best-effort and occasionally delayed or skipped, whereas an explicit
+# workflow_dispatch call (from either Supabase or the app) always fires reliably.
+
 on:
-  schedule:
-    # Daily, 07:00 UTC = 2:00 AM EST / 3:00 AM EDT (a fixed UTC time so it stays
-    # "very early morning Eastern" year-round without needing separate DST jobs —
-    # a backup doesn't need the minute-level precision session-reminders do).
-    - cron: '0 7 * * *'
-  workflow_dispatch: {} # on-demand, including from the in-app Backups panel
+  workflow_dispatch: {} # on-demand: Supabase's daily pg_cron job, or the in-app Backups panel
 
 jobs:
   backup:
