@@ -50,7 +50,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          /usr/lib/postgresql/17/bin/pg_restore --clean --if-exists -d "$DATABASE_URL" restore/database.dump
+          # -n public matches the scoped dump in backup.yml — restricts restore to
+          # YOUR app's tables. Supabase's own schemas (auth, storage, realtime, etc.)
+          # were never in the dump and must never be touched by this restore; they're
+          # owned by Supabase's internal system roles and already exist automatically
+          # on every project.
+          /usr/lib/postgresql/17/bin/pg_restore --clean --if-exists -n public -d "$DATABASE_URL" restore/database.dump
 
       - name: Re-grant standard Supabase role privileges
         env:
