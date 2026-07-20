@@ -30,9 +30,17 @@ jobs:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           mkdir -p backup
+          # NOTE: -n public restricts the dump to YOUR app's tables only. Supabase's
+          # own schemas (auth, storage, realtime, vault, extensions, pgbouncer, graphql)
+          # are managed internally by the platform, owned by Supabase's own system
+          # roles (not the role this connection string authenticates as, even via
+          # Session pooler), and already exist on every project automatically — they
+          # should never be dumped or restored by us. Doing so causes a wall of
+          # "must be owner of..." errors on restore, since our role can't touch them.
           # NOTE: do NOT pass --no-privileges — it strips Supabase's role grants
-          # and causes "permission denied for schema public" on restore.
-          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_URL" -Fc -f backup/database.dump
+          # on YOUR public-schema tables and causes "permission denied for schema
+          # public" on restore.
+          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_URL" -Fc -n public -f backup/database.dump
 
       - name: Sync Storage objects
         env:
